@@ -1,279 +1,101 @@
-<!DOCTYPE html><html lang="es">
+<!DOCTYPE html>
+<html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <title>Balance de Activos (Binance)</title>
+  <meta charset="UTF-8">
+  <title>Índice de Archivos</title>
   <style>
     body {
-      background: #111;
-      color: #fff;
+      background-color: #111;
+      color: white;
       font-family: Arial, sans-serif;
-      padding: 20px;
+      margin: 0;
+      padding: 0;
     }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-bottom: 15px;
-    }
-    th, td {
-      padding: 10px;
-      border: 1px solid #444;
-      vertical-align: top;
-    }
-    input {
-      width: 100%;
+
+    header {
       background: #222;
-      color: #fff;
-      border: 1px solid #444;
-      padding: 5px;
+      padding: 15px;
+      text-align: center;
+      font-size: 24px;
     }
-    .total {
-      font-size: 1.2em;
-      font-weight: bold;
-      color: #0f0;
+
+    .menu-toggle {
+      background: #333;
+      color: white;
+      padding: 15px;
+      text-align: center;
+      cursor: pointer;
+      user-select: none;
+      font-size: 18px;
     }
-    button {
-      padding: 10px;
-      margin: 5px 5px 10px 0;
+
+    nav {
+      display: none;
+      flex-wrap: wrap;
+      gap: 10px;
+      padding: 20px;
+      background: #1a1a1a;
+      justify-content: center;
+    }
+
+    nav button {
       background: #333;
       color: white;
       border: none;
+      padding: 10px 15px;
+      border-radius: 5px;
       cursor: pointer;
     }
-    button:hover {
+
+    nav button:hover {
       background: #555;
     }
-    .barra-contenedor {
-      position: relative;
-      background: #222;
-      height: 16px;
-      border-radius: 4px;
-      overflow: hidden;
-    }
-    .barra {
-      position: absolute;
-      height: 100%;
-      background-color: #00ff88;
-      top: 0;
-      left: 0;
-      transition: width 0.3s ease;
-    }
-    .porcentaje {
-      position: absolute;
+
+    iframe {
       width: 100%;
-      text-align: center;
-      font-size: 12px;
-      color: #fff;
-      line-height: 16px;
-      pointer-events: none;
+      height: 80vh;
+      border: none;
+      display: block;
     }
   </style>
 </head>
 <body>
-  <h1>Balance de Activos</h1>  <table id="activos">
-    <thead>
-      <tr>
-        <th>Activo</th>
-        <th>Cantidad</th>
-        <th>Precio Base</th>
-        <th>Valor Actual</th>
-        <th>% del Total</th>
-      </tr>
-    </thead>
-    <tbody id="tablaCuerpo"></tbody>
-  </table><button onclick="agregarFila()">➕ Agregar Activo</button> <button onclick="calcularBalance()">🧮 Calcular Balance</button> <button onclick="borrarDatos()">🗑️ Borrar Todo</button> <button onclick="actualizarPreciosDesdeBinance()">🔄 Sincronizar con Binance</button>
 
-  <p class="total">💵 Total en USD: $<span id="balanceUSD">0.00</span></p>
-  <p class="total">💰 Total en MXN: $<span id="balanceMXN">0.00</span></p><canvas id="graficoPastel" width="400" height="400" style="margin-top: 30px;"></canvas> <canvas id="graficoHistorial" width="400" height="200" style="margin-top: 30px;"></canvas>
+  <header>Índice de Archivos HTML</header>
 
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>  <script>
-    const STORAGE_KEY = "activos_usd_mxn";
-    const tipoCambioMXN = 18.5;
-    let chart = null;
+  <div class="menu-toggle" onclick="toggleMenu()">☰ Menú</div>
 
-    function agregarFila(activo = "", cantidad = 0, precio = 0) {
-      const fila = document.createElement("tr");
-      fila.innerHTML = `
-        <td><input type="text" value="${activo}"></td>
-        <td><input type="number" step="any" value="${cantidad}"></td>
-        <td><input type="number" step="any" value="${precio}"></td>
-        <td class="valor-actual">$0.00</td>
-        <td class="celda-porcentaje">
-          <div class="barra-contenedor">
-            <div class="barra" style="width:0%"></div>
-            <div class="porcentaje">0.00%</div>
-          </div>
-        </td>
-      `;
-      document.getElementById("tablaCuerpo").appendChild(fila);
-      fila.querySelectorAll("input").forEach(input => {
-        input.addEventListener("input", guardarDatos);
-      });
+  <nav id="menu">
+    <button onclick="cargar('Binance.html')">Binance</button>
+    <button onclick="cargar('contactos.html')">Contactos</button>
+    <button onclick="cargar('Criptonoticias.html')">Criptonoticias</button>
+    <button onclick="cargar('deudores.html')">Deudores</button>
+    <button onclick="cargar('faucets.html')">Faucets</button>
+    <button onclick="cargar('finanzas.html')">Finanzas</button>
+    <button onclick="cargar('Firefaucet.html')">Firefaucet</button>
+    <button onclick="cargar('galeria.html')">Galería</button>
+    <button onclick="cargar('galeriamejorada.html')">Galería Mejorada</button>
+    <button onclick="cargar('imagen.html')">Imagen</button>
+    <button onclick="cargar('progresos.html')">Progresos</button>
+    <button onclick="cargar('recordatorios.html')">Recordatorios</button>
+    <button onclick="cargar('slide.html')">Slide</button>
+    <button onclick="cargar('slideshow.html')">Slideshow</button>
+    <button onclick="cargar('urls.html')">URLs</button>
+  </nav>
+
+  <iframe id="visor" src=""></iframe>
+
+  <script>
+    function toggleMenu() {
+      const menu = document.getElementById('menu');
+      menu.style.display = menu.style.display === 'flex' ? 'none' : 'flex';
     }
 
-    function calcularBalance() {
-      const filas = document.querySelectorAll("#tablaCuerpo tr");
-      let totalUSD = 0;
-      const valores = [];
-
-      filas.forEach(fila => {
-        const inputs = fila.querySelectorAll("input");
-        const cantidad = parseFloat(inputs[1].value) || 0;
-        const precio = parseFloat(inputs[2].value) || 0;
-        const valor = cantidad * precio;
-        fila.querySelector(".valor-actual").textContent = `$${valor.toFixed(2)}`;
-        valores.push(valor);
-        totalUSD += valor;
-      });
-
-      filas.forEach((fila, i) => {
-        const porcentaje = totalUSD > 0 ? (valores[i] / totalUSD) * 100 : 0;
-        const celda = fila.querySelector(".celda-porcentaje");
-        celda.querySelector(".porcentaje").textContent = `${porcentaje.toFixed(2)}%`;
-        celda.querySelector(".barra").style.width = `${porcentaje}%`;
-      });
-
-      const totalMXN = totalUSD * tipoCambioMXN;
-      document.getElementById("balanceUSD").textContent = totalUSD.toFixed(2);
-      document.getElementById("balanceMXN").textContent = totalMXN.toFixed(2);
-
-      const labels = valores.map((_, i) => {
-        return filas[i].querySelectorAll("input")[0].value || `Activo ${i+1}`;
-      });
-      actualizarGrafico(labels, valores, tipoCambioMXN);
-
-      const historial = JSON.parse(localStorage.getItem("historial_balance") || "[]");
-      const hoy = new Date().toISOString().split("T")[0];
-      if (!historial.find(e => e.fecha === hoy)) {
-        historial.push({ fecha: hoy, usd: totalUSD, mxn: totalMXN });
-        localStorage.setItem("historial_balance", JSON.stringify(historial));
-      }
-
-      const fechas = historial.map(e => e.fecha);
-      const montos = historial.map(e => e.usd);
-      new Chart(document.getElementById("graficoHistorial"), {
-        type: "line",
-        data: {
-          labels: fechas,
-          datasets: [{
-            label: "Balance USD",
-            data: montos,
-            borderColor: "#0ff",
-            backgroundColor: "rgba(0,255,255,0.2)",
-            fill: true,
-            tension: 0.3
-          }]
-        },
-        options: {
-          plugins: {
-            legend: { labels: { color: '#fff' } }
-          },
-          scales: {
-            x: { ticks: { color: '#fff' } },
-            y: { ticks: { color: '#fff' } }
-          }
-        }
-      });
+    function cargar(pagina) {
+      document.getElementById('visor').src = pagina;
+      document.getElementById('menu').style.display = 'none'; // Oculta menú tras clic
     }
+  </script>
 
-    function actualizarGrafico(labels, valoresUSD, tipoCambioMXN) {
-      if (chart) chart.destroy();
-      chart = new Chart(document.getElementById("graficoPastel"), {
-        type: "pie",
-        data: {
-          labels: labels,
-          datasets: [{
-            data: valoresUSD,
-            backgroundColor: labels.map(() => '#' + Math.floor(Math.random()*16777215).toString(16)),
-          }]
-        },
-        options: {
-          plugins: {
-            tooltip: {
-              callbacks: {
-                label: function(context) {
-                  const label = context.label || '';
-                  const valueUSD = context.raw;
-                  const valueMXN = valueUSD * tipoCambioMXN;
-                  const total = context.chart._metasets[0].total;
-                  const percent = ((valueUSD / total) * 100).toFixed(2);
-                  return `${label}: $${valueUSD.toFixed(2)} USD | $${valueMXN.toFixed(2)} MXN (${percent}%)`;
-                }
-              }
-            },
-            legend: {
-              position: 'bottom',
-              labels: {
-                color: "#fff",
-                padding: 15
-              }
-            }
-          }
-        }
-      });
-    }
-
-    async function actualizarPreciosDesdeBinance() {
-      const filas = document.querySelectorAll("#tablaCuerpo tr");
-
-      for (let fila of filas) {
-        const inputActivo = fila.querySelectorAll("input")[0];
-        const inputPrecio = fila.querySelectorAll("input")[2];
-        const nombre = inputActivo.value.trim().toUpperCase();
-
-        if (!nombre || nombre === "USD" || nombre === "USDT") continue;
-
-        const par = nombre + "USDT";
-        try {
-          const res = await fetch(`https://api.binance.com/api/v3/ticker/price?symbol=${par}`);
-          if (!res.ok) throw new Error("Par no encontrado");
-          const data = await res.json();
-          const precio = parseFloat(data.price);
-          if (precio) {
-            inputPrecio.value = precio;
-          }
-        } catch (err) {
-          console.warn(`No se pudo obtener el precio para ${nombre}`, err);
-        }
-      }
-
-      guardarDatos();
-    }
-
-    function guardarDatos() {
-      const filas = document.querySelectorAll("#tablaCuerpo tr");
-      const data = [];
-
-      filas.forEach(fila => {
-        const inputs = fila.querySelectorAll("input");
-        data.push({
-          activo: inputs[0].value,
-          cantidad: parseFloat(inputs[1].value) || 0,
-          precio: parseFloat(inputs[2].value) || 0
-        });
-      });
-
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-      calcularBalance();
-    }
-
-    function cargarDatos() {
-      const data = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
-      if (data.length === 0) agregarFila();
-      else data.forEach(d => agregarFila(d.activo, d.cantidad, d.precio));
-    }
-
-    function borrarDatos() {
-      if (confirm("¿Seguro que quieres borrar todos los datos?")) {
-        localStorage.removeItem(STORAGE_KEY);
-        localStorage.removeItem("historial_balance");
-        location.reload();
-      }
-    }
-
-    window.onload = () => {
-      cargarDatos();
-      calcularBalance();
-      actualizarPreciosDesdeBinance();
-    };
-  </script></body>
+</body>
 </html>
