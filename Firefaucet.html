@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Comparativa de Capital Financiero</title>
+  <style>
+    body { font-family: Arial, sans-serif; background: #111; color: #fff; padding: 20px; margin: 0; }
+    input, button { padding: 10px; margin: 5px 0; font-size: 16px; }
+    .inputs, .result, .tabla { margin-top: 15px; background: #222; padding: 15px; border-radius: 10px; }
+    .input-row { display: flex; gap: 10px; margin-bottom: 8px; align-items: center; }
+    .input-row input[type="text"] { flex: 1; }
+    .input-row input[type="number"] { width: 120px; }
+    table { width: 100%; margin-top: 15px; border-collapse: collapse; }
+    th, td { border: 1px solid #555; padding: 8px; text-align: center; }
+    th { background: #333; }
+    .notificacion {
+      position: fixed; top: 20px; right: 20px; background: #2962ff;
+      color: #fff; padding: 10px 20px; border-radius: 10px;
+      font-weight: bold; opacity: 0.95; animation: fade 4s forwards;
+    }
+    @keyframes fade { 0% { opacity: 0; transform: translateY(-10px); }
+      10% { opacity: 1; transform: translateY(0); } 90% { opacity: 1; }
+      100% { opacity: 0; transform: translateY(-10px); } }
+  </style>
+</head>
+<body>
+
+<h2>Capital necesario para igualar tus ganancias</h2>
+
+<div class="inputs" id="inputContainer">
+  <label>Ganancias por minuto (USD):</label>
+</div>
+
+<button onclick="addField()">➕ Agregar otra ganancia</button>
+
+<p><strong>Tipo de cambio (USD a MXN):</strong> <span id="usdToMxnDisplay">Cargando...</span></p>
+
+<div class="result" id="result"></div>
+
+<div class="tabla" id="tablaResultados"></div>
+
+<script>
+let tipoCambioActual = 0;
+
+function addField(nombre = "", valor = 0) {
+  const cont = document.getElementById('inputContainer');
+  const fila = document.createElement('div');
+  fila.className = 'input-row';
+  fila.innerHTML = `
+    <input class="nombre" type="text" placeholder="Nombre" value="${nombre}">
+    <input class="ganancia" type="number" step="0.000001" value="${valor}">
+    <button onclick="removeField(this)">🗑️</button>
+  `;
+  fila.querySelectorAll('input').forEach(el => el.addEventListener('input', () => {
+    saveData(); calcular();
+  }));
+  cont.appendChild(fila);
+}
+
+function removeField(btn) {
+  btn.parentElement.remove();
+  saveData(); calcular();
+}
+
+function saveData() {
+  const data = Array.from(document.querySelectorAll('.input-row')).map(row => ({
+    nombre: row.querySelector('.nombre').value,
+    valor: row.querySelector('.ganancia').value
+  }));
+  localStorage.setItem('ganancias', JSON.stringify(data));
+}
+
+function loadData() {
+  const guardados = JSON.parse(localStorage.getItem('ganancias') || '[]');
+  (guardados.length ? guardados : [{nombre:"Ingreso 1",valor:0.000068}])
+    .forEach(i => addField(i.nombre, i.valor));
+}
+
+function calcular() {
+  const inputs = document.querySelectorAll('.ganancia');
+  let totalUSDmin = 0;
+  inputs.forEach(i => totalUSDmin += parseFloat(i.value)||0);
+
+  const usdAnual = totalUSDmin * 60 * 24 * 365;
+  const mxnAnual = usdAnual * tipoCambioActual;
+
+  document.getElementById('result').innerHTML = `
+    <strong>Ganancia anual estimada:</strong><br>
+    USD: $${usdAnual.toFixed(2)}<br>
+    MXN: $${mxnAnual.toFixed(2)}
+  `;
+
+  // Tabla principal
+  const tasas = {
+    cetes:0.0806, mp:0.15, banco:0.058, fintech:0.12,
+    sp500:0.104, bitcoin:0.49, oro:0.065, plata:0.048,
+    petroleo:0.072, banorte:0.065, azteca:0.08,
+    hsbc:0.052, banamex:0.055, bancomer:0.058, coppel:0.07};
+
+  const nombres = {
+    cetes:"CETES (8.06%)", mp:"Mercado Pago (15%)",
+    banco:"Banco Tradicional (5.8%)", fintech:"Fintech (12%)",
+    sp500:"S&P 500 (10.4%)", bitcoin:"Bitcoin (49%)",
+    oro:"Oro (6.5%)", plata:"Plata (4.8%)", petroleo:"Petróleo (7.2%)",
+    banorte:"Banorte (6.5%)", azteca:"Banco Azteca (8%)",
+    hsbc:"HSBC (5.2%)", banamex:"Banamex (5.5%)",
+    bancomer:"BBVA (5.8%)", coppel:"Coppel (7%)"};
+
+  let res = [];
+  for(const k in tasas){
+    const c = mxnAnual / tasas[k];
+    res.push({
+      producto: nombres[k],
+      anual:c, mensual:c/12, semanal:c/52, diario:c/365
+    });
+  }
+  res.sort((a,b)=>a.anual-b.anual);
+  renderTable('tablaResultados',res);
+}
+
+function renderTable(containerId,data){
+  let html = `<table><thead><tr>
+    <th>Producto</th><th>Capital Anual</th>
+    <th>Mensual</th><th>Semanal</th><th>Diario</th>
+  </tr></thead><tbody>`;
+  data.forEach(r => {
+    html += `<tr>
+      <td>${r.producto}</td>
+      <td>$${r.anual.toFixed(2)}</td>
+      <td>$${r.mensual.toFixed(2)}</td>
+      <td>$${r.semanal.toFixed(2)}</td>
+      <td>$${r.diario.toFixed(2)}</td>
+    </tr>`;
+  });
+  html += `</tbody></table>`;
+  document.getElementById(containerId).innerHTML = html;
+}
+
+async function obtenerTipoCambio(){
+  try {
+    const res = await fetch("https://api.binance.com/api/v3/ticker/price?symbol=USDTMXN");
+    const data = await res.json();
+    tipoCambioActual = parseFloat(data.price);
+    document.getElementById('usdToMxnDisplay').textContent = tipoCambioActual.toFixed(4);
+    calcular();
+    mostrarNotificacion("Tipo de cambio actualizado");
+  } catch {
+    document.getElementById('usdToMxnDisplay').textContent = "Error";
+  }
+}
+
+function mostrarNotificacion(msg){
+  const d = document.createElement('div');
+  d.className = 'notificacion'; d.textContent = msg;
+  document.body.appendChild(d);
+  setTimeout(()=>d.remove(),4000);
+}
+
+window.onload = async()=>{
+  loadData();
+  await obtenerTipoCambio();
+  setInterval(obtenerTipoCambio,60000);
+};
+</script>
+
+</body>
+</html>
